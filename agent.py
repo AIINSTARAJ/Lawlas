@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 LawLas ⚖️ - AI-Powered Legal Assistant
 A comprehensive legal assistant system using LangChain and Gemini models.
@@ -19,7 +18,7 @@ from typing import Dict, List, Optional, Any
 def install_requirements():
     packages = [
         'langchain', 'langchain-google-genai', 'langchain-community',
-        'colored', 'reportlab', 'python-docx', 'PyPDF2', 'requests',
+        'termcolor', 'reportlab', 'python-docx', 'PyPDF2', 'requests',
         'wikipedia', 'duckduckgo-search', 'python-dotenv'
     ]
     for package in packages:
@@ -31,7 +30,7 @@ def install_requirements():
 
 install_requirements()
 
-from colored import fg, bg, attr
+from termcolor import colored
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain.tools import Tool
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -47,12 +46,12 @@ from duckduckgo_search import DDGS
 # =============================================================================
 # CONFIGURATION VARIABLES
 # =============================================================================
-GEMINI_API_KEY = os.getenv('GOOGLE_API_KEY', 'your_gemini_api_key_here')
-MAIN_MODEL = "gemini-2.0-flash-exp"  # Main LLM
-SUB_MODEL = "gemini-2.0-flash-exp"   # Sub-agent tools
+GEMINI_API_KEY = os.getenv('GOOGLE_API_KEY','')
+MAIN_MODEL = "gemini-2.5-flash"  
+SUB_MODEL = "gemini-2.0-flash" 
 DATABASE_PATH = "data.db"
-INPUT_DIR = Path("input")
-OUTPUT_DIR = Path("output")
+INPUT_DIR = Path("Input")
+OUTPUT_DIR = Path("Output")
 
 # Create directories
 INPUT_DIR.mkdir(exist_ok=True)
@@ -63,11 +62,11 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 # =============================================================================
 
 def colored_print(text: str, color: str = "white", style: str = "normal"):
-    """Print colored text with formatting"""
-    colors = {"red": fg.red, "green": fg.green, "blue": fg.blue, 
-              "yellow": fg.yellow, "magenta": fg.magenta, "cyan": fg.cyan, "white": fg.white}
-    styles = {"bold": attr.bold, "normal": attr.reset}
-    print(f"{colors.get(color, fg.white)}{styles.get(style, attr.reset)}{text}{attr.reset}")
+    """Print text with color and optional bold style using termcolor"""
+    attrs = []
+    if style == "bold":
+        attrs.append("bold")
+    print(colored(text, color, attrs=attrs))
 
 def encrypt_token(timestamp: str, name: str) -> str:
     """Generate encrypted token from timestamp and name"""
@@ -508,7 +507,7 @@ class LawLasSystem:
         
         while True:
             try:
-                user_input = input(f"{fg.cyan}You: {attr.reset}").strip()
+                user_input = input(colored("You: ", "cyan")).strip()
                 
                 if user_input.lower() in ['exit', 'quit']:
                     colored_print("Goodbye! 👋", "cyan")
@@ -624,10 +623,10 @@ class LawLasSystem:
         if 'disclaimer' not in response.lower():
             response += "\n\n⚠️ Disclaimer: This information is for educational purposes only and does not constitute legal advice."
         
-        # Bold important terms (simple implementation)
+        # Bold important terms (using termcolor)
         legal_terms = ['contract', 'liability', 'negligence', 'breach', 'damages', 'rights', 'obligations']
         for term in legal_terms:
-            response = response.replace(term, f"{attr.bold}{term}{attr.reset}")
+            response = response.replace(term, colored(term, "white", attrs=["bold"]))
         
         return response
     

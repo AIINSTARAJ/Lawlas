@@ -1,0 +1,29 @@
+{
+  "A.I Instaraj": {
+    "name": "A.I Instaraj",
+    "location": "-, -",
+    "token": "1d73115cf5d5f5e2",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hi",
+        "timestamp": "2025-09-03T11:25:27.844738"
+      },
+      {
+        "role": "assistant",
+        "content": "Agent stopped due to iteration limit or time limit.\n\n\u26a0\ufe0f Disclaimer: This information is for educational purposes only and does not constitute legal advice.",
+        "timestamp": "2025-09-03T11:25:43.856693"
+      },
+      {
+        "role": "user",
+        "content": "Explain Contract Law",
+        "timestamp": "2025-09-03T11:26:12.070837"
+      },
+      {
+        "role": "assistant",
+        "content": "I apologize, but I encountered an error: 429 You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. [violations {\n}\n, links {\n  description: \"Learn more about Gemini API quotas\"\n  url: \"https://ai.google.dev/gemini-api/docs/rate-limits\"\n}\n, retry_delay {\n  seconds: 38\n}\n]. Please try rephrasing your question.",
+        "timestamp": "2025-09-03T11:26:21.634814"
+      }
+    ]
+  }
+}

@@ -19,7 +19,7 @@ def install_requirements():
     packages = [
         'langchain', 'langchain-google-genai', 'langchain-community',
         'termcolor', 'reportlab', 'python-docx', 'PyPDF2', 'requests',
-        'wikipedia', 'duckduckgo-search', 'python-dotenv'
+        'wikipedia', 'ddgs', 'python-dotenv'
     ]
     for package in packages:
         try:
@@ -41,26 +41,23 @@ from reportlab.pdfgen import canvas
 from docx import Document
 import PyPDF2
 import wikipedia
-from duckduckgo_search import DDGS
+from ddgs import DDGS
+from dotenv import load_dotenv
 
-# =============================================================================
+load_dotenv()
 # CONFIGURATION VARIABLES
-# =============================================================================
 GEMINI_API_KEY = os.getenv('GOOGLE_API_KEY','')
-MAIN_MODEL = "gemini-2.5-flash"  
+MAIN_MODEL = "gemini-2.0-flash"  
 SUB_MODEL = "gemini-2.0-flash" 
 DATABASE_PATH = "data.db"
 INPUT_DIR = Path("Input")
 OUTPUT_DIR = Path("Output")
 
-# Create directories
+# Directories
 INPUT_DIR.mkdir(exist_ok=True)
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-# =============================================================================
 # UTILITY FUNCTIONS
-# =============================================================================
-
 def colored_print(text: str, color: str = "white", style: str = "normal"):
     """Print text with color and optional bold style using termcolor"""
     attrs = []
@@ -93,14 +90,12 @@ def detect_location() -> str:
     try:
         response = requests.get('http://ipapi.co/json/', timeout=5)
         data = response.json()
-        return f"{data.get('city', 'Unknown')}, {data.get('country_name', 'Unknown')}"
+        return f"{data.get('city', '-')}, {data.get('country_name', '-')}"
     except:
         return "Location detection failed"
 
-# =============================================================================
-# TOOLS AND AGENTS
-# =============================================================================
 
+# TOOLS AND AGENTS
 class LawLasTools:
     """Collection of legal assistant tools"""
     
@@ -111,7 +106,7 @@ class LawLasTools:
     def search_tool(self, query: str) -> str:
         """Search the web for legal information"""
         try:
-            results = list(self.ddgs.text(query, max_results=3))
+            results = list(self.ddgs.text(query, max_results=5))
             return "\n".join([f"- {r['title']}: {r['body']}" for r in results])
         except Exception as e:
             return f"Search error: {str(e)}"
@@ -119,7 +114,7 @@ class LawLasTools:
     def wikipedia_tool(self, topic: str) -> str:
         """Search Wikipedia for legal topics"""
         try:
-            summary = wikipedia.summary(topic, sentences=3)
+            summary = wikipedia.summary(topic, sentences=5)
             return f"Wikipedia: {summary}"
         except wikipedia.exceptions.DisambiguationError as e:
             return f"Multiple topics found: {', '.join(e.options[:5])}"
@@ -139,7 +134,7 @@ class LawLasTools:
         """Analyze uploaded legal documents"""
         file_path = INPUT_DIR / filename
         if not file_path.exists():
-            return f"File {filename} not found in /input directory"
+            return f"File {filename} not found in Input directory"
         
         try:
             if filename.endswith('.pdf'):
@@ -281,10 +276,8 @@ class LawLasTools:
         except Exception as e:
             return f"Summarization error: {str(e)}"
 
-# =============================================================================
-# MEMORY MANAGER
-# =============================================================================
 
+# MEMORY MANAGER
 class MemoryManager:
     """Manage user conversation history"""
     
@@ -323,9 +316,8 @@ class MemoryManager:
         
         return context
 
-# =============================================================================
+
 # MAIN LAWLAS SYSTEM
-# =============================================================================
 
 class LawLasSystem:
     """Main LawLas legal assistant system"""
@@ -478,6 +470,7 @@ class LawLasSystem:
     
     def login(self):
         """User login process"""
+        subprocess.run('cls')
         name = input("Enter your name: ").strip()
         token = input("Enter your token: ").strip()
         
@@ -568,19 +561,26 @@ class LawLasSystem:
             
             # Create agent prompt template
             template = """
-            {system_prompt}
-            
-            Human: {input}
-            
-            Use available tools as needed to provide comprehensive legal assistance.
-            
-            {agent_scratchpad}
+                {system_prompt}
+
+                Available tools: {tool_names}
+
+                Human: {input}
+
+                Use the tools as needed to provide comprehensive legal assistance.
+
+                Tools object: {tools}
+
+                {agent_scratchpad}
             """
+
+
             
             prompt = PromptTemplate(
                 template=template,
-                input_variables=["input", "agent_scratchpad", "system_prompt"]
+                input_variables=["input", "agent_scratchpad", "system_prompt", "tool_names"]
             )
+
             
             # Create agent
             agent = create_react_agent(self.main_llm, self.tools, prompt)
@@ -592,10 +592,15 @@ class LawLasSystem:
             )
             
             # Execute
+            tool_names = ", ".join([tool.name for tool in self.tools])
             result = agent_executor.invoke({
                 "input": user_input,
-                "system_prompt": system_prompt
+                "system_prompt": system_prompt,
+                "tool_names": tool_names,
+                "tools": self.tools
             })
+
+
             
             return self.format_response(result.get('output', 'No response generated.'))
             
